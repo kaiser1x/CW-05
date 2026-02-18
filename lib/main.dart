@@ -16,7 +16,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   int happinessLevel = 50;
   int hungerLevel = 50;
 
-  // Dynamic Color Change (ColorFiltered)
+  // Dynamic Color Change
   Color _moodColor(double happinessLevel) {
     if (happinessLevel > 70) {
       return Colors.green;
@@ -24,6 +24,17 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
       return Colors.yellow;
     } else {
       return Colors.red;
+    }
+  }
+
+  //Mood Indicator Helper
+  String _moodText() {
+    if (happinessLevel > 70) {
+      return "Happy 😊";
+    } else if (happinessLevel >= 30) {
+      return "Neutral 😐";
+    } else {
+      return "Unhappy 😢";
     }
   }
 
@@ -69,7 +80,6 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            // Pet image tinted based on happiness
             ColorFiltered(
               colorFilter: ColorFilter.mode(
                 _moodColor(happinessLevel.toDouble()),
@@ -79,17 +89,25 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
                 'assets/pet_image.png',
                 width: 160,
                 height: 160,
-                fit: BoxFit.contain,
               ),
             ),
-            SizedBox(height: 20.0),
 
+            SizedBox(height: 16.0),
+
+            //Mood Display
+            Text(
+              'Mood: ${_moodText()}',
+              style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
+            ),
+
+            SizedBox(height: 16.0),
             Text('Name: $petName', style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 16.0),
             Text('Happiness Level: $happinessLevel', style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 16.0),
             Text('Hunger Level: $hungerLevel', style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 32.0),
+
             ElevatedButton(
               onPressed: _playWithPet,
               child: Text('Play with Your Pet'),
