@@ -17,6 +17,8 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   int happinessLevel = 50;
   int hungerLevel = 50;
 
+  int energyLevel = 80;
+
   final TextEditingController _nameController = TextEditingController();
 
   Timer? _hungerTimer;
@@ -26,7 +28,6 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   bool _gameOver = false;
   bool _hasWon = false;
 
-  // Activity Selection
   final List<String> _activities = ["Play", "Run", "Sleep"];
   String _selectedActivity = "Play";
 
@@ -91,12 +92,15 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
       if (_selectedActivity == "Play") {
         happinessLevel += 10;
         hungerLevel += 5;
+        energyLevel -= 5;
       } else if (_selectedActivity == "Run") {
         happinessLevel += 15;
         hungerLevel += 10;
+        energyLevel -= 15;
       } else if (_selectedActivity == "Sleep") {
         happinessLevel += 5;
         hungerLevel += 2;
+        energyLevel += 20;
       }
 
       if (happinessLevel > 100) happinessLevel = 100;
@@ -104,14 +108,12 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
 
       if (hungerLevel > 100) hungerLevel = 100;
       if (hungerLevel < 0) hungerLevel = 0;
+
+      if (energyLevel > 100) energyLevel = 100;
+      if (energyLevel < 0) energyLevel = 0;
     });
 
-    if (_selectedActivity != "Play") {
-      _checkLoss();
-    } else {
-      // keep original behavior consistent: use existing hunger update
-      _checkLoss();
-    }
+    _checkLoss();
   }
 
   void _feedPet() {
@@ -193,6 +195,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
       petName = "Destroyer";
       happinessLevel = 50;
       hungerLevel = 50;
+      energyLevel = 80;
       _happySeconds = 0;
       _gameOver = false;
       _hasWon = false;
@@ -246,10 +249,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
               onPressed: disabled ? null : _setPetName,
               child: Text('Set Name'),
             ),
-
             SizedBox(height: 16.0),
-
-            // Activity Selection Dropdown
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: DropdownButtonFormField<String>(
@@ -276,9 +276,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
               onPressed: disabled ? null : _doActivity,
               child: Text('Do Activity'),
             ),
-
             SizedBox(height: 20.0),
-
             ColorFiltered(
               colorFilter: ColorFilter.mode(
                 _moodColor(happinessLevel.toDouble()),
@@ -290,14 +288,11 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
                 height: 160,
               ),
             ),
-
             SizedBox(height: 16.0),
-
             Text(
               'Mood: ${_moodText()}',
               style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
             ),
-
             SizedBox(height: 16.0),
             Text('Name: $petName', style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 16.0),
@@ -306,15 +301,15 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
             SizedBox(height: 16.0),
             Text('Hunger Level: $hungerLevel',
                 style: TextStyle(fontSize: 20.0)),
+            SizedBox(height: 16.0),
+            Text('Energy Level: $energyLevel',
+                style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 32.0),
-
             ElevatedButton(
               onPressed: disabled ? null : _feedPet,
               child: Text('Feed Your Pet'),
             ),
-
             SizedBox(height: 16.0),
-
             Text(
               'Win timer: ${(_happySeconds / 60).toStringAsFixed(2)} minutes above 80',
             ),
@@ -324,3 +319,4 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     );
   }
 }
+
