@@ -26,6 +26,10 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   bool _gameOver = false;
   bool _hasWon = false;
 
+  // Activity Selection
+  final List<String> _activities = ["Play", "Run", "Sleep"];
+  String _selectedActivity = "Play";
+
   @override
   void initState() {
     super.initState();
@@ -80,16 +84,34 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     _nameController.clear();
   }
 
-  void _playWithPet() {
+  void _doActivity() {
     if (_gameOver || _hasWon) return;
 
     setState(() {
-      happinessLevel += 10;
+      if (_selectedActivity == "Play") {
+        happinessLevel += 10;
+        hungerLevel += 5;
+      } else if (_selectedActivity == "Run") {
+        happinessLevel += 15;
+        hungerLevel += 10;
+      } else if (_selectedActivity == "Sleep") {
+        happinessLevel += 5;
+        hungerLevel += 2;
+      }
+
       if (happinessLevel > 100) happinessLevel = 100;
+      if (happinessLevel < 0) happinessLevel = 0;
+
+      if (hungerLevel > 100) hungerLevel = 100;
+      if (hungerLevel < 0) hungerLevel = 0;
     });
 
-    _updateHunger();
-    _checkLoss();
+    if (_selectedActivity != "Play") {
+      _checkLoss();
+    } else {
+      // keep original behavior consistent: use existing hunger update
+      _checkLoss();
+    }
   }
 
   void _feedPet() {
@@ -174,6 +196,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
       _happySeconds = 0;
       _gameOver = false;
       _hasWon = false;
+      _selectedActivity = "Play";
       _nameController.clear();
     });
   }
@@ -223,7 +246,39 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
               onPressed: disabled ? null : _setPetName,
               child: Text('Set Name'),
             ),
+
+            SizedBox(height: 16.0),
+
+            // Activity Selection Dropdown
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: DropdownButtonFormField<String>(
+                value: _selectedActivity,
+                decoration: InputDecoration(
+                  labelText: 'Select activity',
+                  border: OutlineInputBorder(),
+                ),
+                items: _activities
+                    .map((a) => DropdownMenuItem(value: a, child: Text(a)))
+                    .toList(),
+                onChanged: disabled
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        setState(() {
+                          _selectedActivity = value;
+                        });
+                      },
+              ),
+            ),
+            SizedBox(height: 12.0),
+            ElevatedButton(
+              onPressed: disabled ? null : _doActivity,
+              child: Text('Do Activity'),
+            ),
+
             SizedBox(height: 20.0),
+
             ColorFiltered(
               colorFilter: ColorFilter.mode(
                 _moodColor(happinessLevel.toDouble()),
@@ -235,11 +290,14 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
                 height: 160,
               ),
             ),
+
             SizedBox(height: 16.0),
+
             Text(
               'Mood: ${_moodText()}',
               style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
             ),
+
             SizedBox(height: 16.0),
             Text('Name: $petName', style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 16.0),
@@ -249,16 +307,14 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
             Text('Hunger Level: $hungerLevel',
                 style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 32.0),
-            ElevatedButton(
-              onPressed: disabled ? null : _playWithPet,
-              child: Text('Play with Your Pet'),
-            ),
-            SizedBox(height: 16.0),
+
             ElevatedButton(
               onPressed: disabled ? null : _feedPet,
               child: Text('Feed Your Pet'),
             ),
+
             SizedBox(height: 16.0),
+
             Text(
               'Win timer: ${(_happySeconds / 60).toStringAsFixed(2)} minutes above 80',
             ),
