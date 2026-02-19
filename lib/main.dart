@@ -20,14 +20,32 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   final TextEditingController _nameController = TextEditingController();
 
   Timer? _hungerTimer;
+  Timer? _winTimer;
+
+  int _happySeconds = 0;
+  bool _gameOver = false;
+  bool _hasWon = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Auto-Hunger Timer
     _hungerTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      if (_gameOver || _hasWon) return;
       _updateHunger();
+    });
+
+    _winTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_gameOver || _hasWon) return;
+
+      if (happinessLevel > 80) {
+        _happySeconds++;
+        if (_happySeconds >= 180) {
+          _triggerWin();
+        }
+      } else {
+        _happySeconds = 0;
+      }
     });
   }
 
@@ -63,25 +81,40 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   }
 
   void _playWithPet() {
+    if (_gameOver || _hasWon) return;
+
     setState(() {
       happinessLevel += 10;
-      _updateHunger();
+      if (happinessLevel > 100) happinessLevel = 100;
     });
+
+    _updateHunger();
+    _checkLoss();
   }
 
   void _feedPet() {
+    if (_gameOver || _hasWon) return;
+
     setState(() {
       hungerLevel -= 10;
-      _updateHappiness();
+      if (hungerLevel < 0) hungerLevel = 0;
     });
+
+    _updateHappiness();
+    _checkLoss();
   }
 
   void _updateHappiness() {
-    if (hungerLevel < 30) {
-      happinessLevel -= 20;
-    } else {
-      happinessLevel += 10;
-    }
+    setState(() {
+      if (hungerLevel < 30) {
+        happinessLevel -= 20;
+      } else {
+        happinessLevel += 10;
+      }
+
+      if (happinessLevel < 0) happinessLevel = 0;
+      if (happinessLevel > 100) happinessLevel = 100;
+    });
   }
 
   void _updateHunger() {
@@ -91,22 +124,84 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
       if (hungerLevel > 100) {
         hungerLevel = 100;
         happinessLevel -= 20;
+        if (happinessLevel < 0) happinessLevel = 0;
       }
+    });
+
+    _checkLoss();
+  }
+
+  void _checkLoss() {
+    if (hungerLevel >= 100 && happinessLevel <= 10 && !_gameOver && !_hasWon) {
+      _gameOver = true;
+      _showDialog("Game Over", "$petName has lost the game.");
+      setState(() {});
+    }
+  }
+
+  void _triggerWin() {
+    if (_hasWon || _gameOver) return;
+
+    _hasWon = true;
+    _showDialog("You Win", "You kept happiness above 80 for 3 minutes.");
+    setState(() {});
+  }
+
+  void _showDialog(String title, String message) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetGame() {
+    setState(() {
+      petName = "Destroyer";
+      happinessLevel = 50;
+      hungerLevel = 50;
+      _happySeconds = 0;
+      _gameOver = false;
+      _hasWon = false;
+      _nameController.clear();
     });
   }
 
   @override
   void dispose() {
     _hungerTimer?.cancel();
+    _winTimer?.cancel();
     _nameController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool disabled = _gameOver || _hasWon;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Digital Pet'),
+        actions: [
+          TextButton(
+            onPressed: _resetGame,
+            child: Text(
+              "Reset",
+              style: TextStyle(color: Colors.white),
+            ),
+          )
+        ],
       ),
       body: Center(
         child: Column(
@@ -125,12 +220,10 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
             ),
             SizedBox(height: 12.0),
             ElevatedButton(
-              onPressed: _setPetName,
+              onPressed: disabled ? null : _setPetName,
               child: Text('Set Name'),
             ),
-
             SizedBox(height: 20.0),
-
             ColorFiltered(
               colorFilter: ColorFilter.mode(
                 _moodColor(happinessLevel.toDouble()),
@@ -142,14 +235,11 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
                 height: 160,
               ),
             ),
-
             SizedBox(height: 16.0),
-
             Text(
               'Mood: ${_moodText()}',
               style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
             ),
-
             SizedBox(height: 16.0),
             Text('Name: $petName', style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 16.0),
@@ -159,15 +249,18 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
             Text('Hunger Level: $hungerLevel',
                 style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 32.0),
-
             ElevatedButton(
-              onPressed: _playWithPet,
+              onPressed: disabled ? null : _playWithPet,
               child: Text('Play with Your Pet'),
             ),
             SizedBox(height: 16.0),
             ElevatedButton(
-              onPressed: _feedPet,
+              onPressed: disabled ? null : _feedPet,
               child: Text('Feed Your Pet'),
+            ),
+            SizedBox(height: 16.0),
+            Text(
+              'Win timer: ${(_happySeconds / 60).toStringAsFixed(2)} minutes above 80',
             ),
           ],
         ),
