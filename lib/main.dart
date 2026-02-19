@@ -16,6 +16,9 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   int happinessLevel = 50;
   int hungerLevel = 50;
 
+  //Name Customization controller
+  final TextEditingController _nameController = TextEditingController();
+
   // Dynamic Color Change
   Color _moodColor(double happinessLevel) {
     if (happinessLevel > 70) {
@@ -27,7 +30,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     }
   }
 
-  //Mood Indicator Helper
+  // Mood Indicator Helper
   String _moodText() {
     if (happinessLevel > 70) {
       return "Happy 😊";
@@ -36,6 +39,18 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     } else {
       return "Unhappy 😢";
     }
+  }
+
+  //set name button logic
+  void _setPetName() {
+    final newName = _nameController.text.trim();
+    if (newName.isEmpty) return;
+
+    setState(() {
+      petName = newName;
+    });
+
+    _nameController.clear();
   }
 
   void _playWithPet() {
@@ -71,6 +86,12 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   }
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -80,6 +101,26 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            //Name Customization UI
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Enter pet name',
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: (_) => _setPetName(),
+              ),
+            ),
+            SizedBox(height: 12.0),
+            ElevatedButton(
+              onPressed: _setPetName,
+              child: Text('Set Name'),
+            ),
+
+            SizedBox(height: 20.0),
+
             ColorFiltered(
               colorFilter: ColorFilter.mode(
                 _moodColor(happinessLevel.toDouble()),
@@ -94,7 +135,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
 
             SizedBox(height: 16.0),
 
-            //Mood Display
+            // Mood Display
             Text(
               'Mood: ${_moodText()}',
               style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
@@ -103,7 +144,8 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
             SizedBox(height: 16.0),
             Text('Name: $petName', style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 16.0),
-            Text('Happiness Level: $happinessLevel', style: TextStyle(fontSize: 20.0)),
+            Text('Happiness Level: $happinessLevel',
+                style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 16.0),
             Text('Hunger Level: $hungerLevel', style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 32.0),
