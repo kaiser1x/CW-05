@@ -16,7 +16,6 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   String petName = "Destroyer";
   int happinessLevel = 50;
   int hungerLevel = 50;
-
   int energyLevel = 80;
 
   final TextEditingController _nameController = TextEditingController();
@@ -35,11 +34,13 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   void initState() {
     super.initState();
 
+    // Auto-hunger: increases hunger every 30 seconds
     _hungerTimer = Timer.periodic(Duration(seconds: 30), (timer) {
       if (_gameOver || _hasWon) return;
-      _updateHunger();
+      _increaseHunger(5);
     });
 
+    // Win condition: happiness > 80 for 3 minutes (180 seconds)
     _winTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (_gameOver || _hasWon) return;
 
@@ -74,6 +75,12 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     }
   }
 
+  int _clamp(int v) {
+    if (v < 0) return 0;
+    if (v > 100) return 100;
+    return v;
+  }
+
   void _setPetName() {
     final newName = _nameController.text.trim();
     if (newName.isEmpty) return;
@@ -85,73 +92,76 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     _nameController.clear();
   }
 
+  // Core hunger functions (clearer than mixing meanings in one method)
+  void _increaseHunger(int amount) {
+    setState(() {
+      hungerLevel = _clamp(hungerLevel + amount);
+
+      // If hunger maxes out, happiness takes a hit
+      if (hungerLevel == 100) {
+        happinessLevel = _clamp(happinessLevel - 20);
+      }
+    });
+
+    _checkLoss();
+  }
+
+  void _decreaseHunger(int amount) {
+    setState(() {
+      hungerLevel = _clamp(hungerLevel - amount);
+    });
+  }
+
+  void _updateHappinessFromHunger() {
+    setState(() {
+      // Hungry pet is less happy, well-fed pet is happier
+      if (hungerLevel >= 70) {
+        happinessLevel = _clamp(happinessLevel - 10);
+      } else if (hungerLevel <= 30) {
+        happinessLevel = _clamp(happinessLevel + 10);
+      }
+    });
+  }
+
   void _doActivity() {
     if (_gameOver || _hasWon) return;
 
-    setState(() {
-      if (_selectedActivity == "Play") {
-        happinessLevel += 10;
-        hungerLevel += 5;
-        energyLevel -= 5;
-      } else if (_selectedActivity == "Run") {
-        happinessLevel += 15;
-        hungerLevel += 10;
-        energyLevel -= 15;
-      } else if (_selectedActivity == "Sleep") {
-        happinessLevel += 5;
-        hungerLevel += 2;
-        energyLevel += 20;
-      }
+    if (_selectedActivity == "Play") {
+      setState(() {
+        happinessLevel = _clamp(happinessLevel + 10);
+        energyLevel = _clamp(energyLevel - 5);
+      });
+      _increaseHunger(5);
+    } else if (_selectedActivity == "Run") {
+      setState(() {
+        happinessLevel = _clamp(happinessLevel + 15);
+        energyLevel = _clamp(energyLevel - 15);
+      });
+      _increaseHunger(10);
+    } else if (_selectedActivity == "Sleep") {
+      setState(() {
+        energyLevel = _clamp(energyLevel + 20);
+        happinessLevel = _clamp(happinessLevel + 5);
+      });
+      // Sleeping makes the pet slightly hungrier over time, but less than running
+      _increaseHunger(2);
+    }
 
-      if (happinessLevel > 100) happinessLevel = 100;
-      if (happinessLevel < 0) happinessLevel = 0;
-
-      if (hungerLevel > 100) hungerLevel = 100;
-      if (hungerLevel < 0) hungerLevel = 0;
-
-      if (energyLevel > 100) energyLevel = 100;
-      if (energyLevel < 0) energyLevel = 0;
-    });
-
+    _updateHappinessFromHunger();
     _checkLoss();
   }
 
   void _feedPet() {
     if (_gameOver || _hasWon) return;
 
+    // Feeding reduces hunger and restores a bit of energy
+    _decreaseHunger(10);
+
     setState(() {
-      hungerLevel -= 10;
-      if (hungerLevel < 0) hungerLevel = 0;
+      energyLevel = _clamp(energyLevel + 5);
     });
 
-    _updateHappiness();
-    _checkLoss();
-  }
-
-  void _updateHappiness() {
-    setState(() {
-      if (hungerLevel < 30) {
-        happinessLevel -= 20;
-      } else {
-        happinessLevel += 10;
-      }
-
-      if (happinessLevel < 0) happinessLevel = 0;
-      if (happinessLevel > 100) happinessLevel = 100;
-    });
-  }
-
-  void _updateHunger() {
-    setState(() {
-      hungerLevel += 5;
-
-      if (hungerLevel > 100) {
-        hungerLevel = 100;
-        happinessLevel -= 20;
-        if (happinessLevel < 0) happinessLevel = 0;
-      }
-    });
-
+    _updateHappinessFromHunger();
     _checkLoss();
   }
 
@@ -319,4 +329,3 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     );
   }
 }
-
