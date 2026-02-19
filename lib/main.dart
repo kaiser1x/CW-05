@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -16,10 +17,20 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   int happinessLevel = 50;
   int hungerLevel = 50;
 
-  //Name Customization controller
   final TextEditingController _nameController = TextEditingController();
 
-  // Dynamic Color Change
+  Timer? _hungerTimer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Auto-Hunger Timer
+    _hungerTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      _updateHunger();
+    });
+  }
+
   Color _moodColor(double happinessLevel) {
     if (happinessLevel > 70) {
       return Colors.green;
@@ -30,18 +41,16 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
     }
   }
 
-  // Mood Indicator Helper
   String _moodText() {
     if (happinessLevel > 70) {
-      return "Happy 😊";
+      return "Happy";
     } else if (happinessLevel >= 30) {
-      return "Neutral 😐";
+      return "Neutral";
     } else {
-      return "Unhappy 😢";
+      return "Unhappy";
     }
   }
 
-  //set name button logic
   void _setPetName() {
     final newName = _nameController.text.trim();
     if (newName.isEmpty) return;
@@ -78,6 +87,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
   void _updateHunger() {
     setState(() {
       hungerLevel += 5;
+
       if (hungerLevel > 100) {
         hungerLevel = 100;
         happinessLevel -= 20;
@@ -87,6 +97,7 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
 
   @override
   void dispose() {
+    _hungerTimer?.cancel();
     _nameController.dispose();
     super.dispose();
   }
@@ -101,7 +112,6 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            //Name Customization UI
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: TextField(
@@ -135,7 +145,6 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
 
             SizedBox(height: 16.0),
 
-            // Mood Display
             Text(
               'Mood: ${_moodText()}',
               style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
@@ -147,7 +156,8 @@ class _DigitalPetAppState extends State<DigitalPetApp> {
             Text('Happiness Level: $happinessLevel',
                 style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 16.0),
-            Text('Hunger Level: $hungerLevel', style: TextStyle(fontSize: 20.0)),
+            Text('Hunger Level: $hungerLevel',
+                style: TextStyle(fontSize: 20.0)),
             SizedBox(height: 32.0),
 
             ElevatedButton(
